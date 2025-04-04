@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drainage Monitoring System</title>
+    <style>
+        :root {
+            --normal: #2ecc71;
+            --warning: #f39c12;
+            --critical: #e74c3c;
+            --emergency: #c0392b;
+            --card-bg: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #ecf0f1;
+            --bg-color: #f9f9f9;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+        
+        .location-info {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .sensor-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            transition: transform 0.3s ease;
+            border-top: 5px solid var(--normal);
+        }
+        
+        .sensor-card.warning {
+            border-top-color: var(--warning);
+        }
+        
+        .sensor-card.critical {
+            border-top-color: var(--critical);
+            animation: pulse 2s infinite;
+        }
+        
+        .sensor-card.emergency {
+            border-top-color: var(--emergency);
+            animation: pulse 1s infinite;
+        }
+        
+        .sensor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .sensor-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .sensor-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .status-normal {
+            background-color: var(--normal);
+        }
+        
+        .status-warning {
+            background-color: var(--warning);
+        }
+        
+        .status-critical {
+            background-color: var(--critical);
+        }
+        
+        .status-emergency {
+            background-color: var(--emergency);
+        }
+        
+        .sensor-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            display: flex;
+            align-items: flex-end;
+        }
+        
+        .sensor-unit {
+            font-size: 1rem;
+            margin-left: 5px;
+            color: #7f8c8d;
+            font-weight: normal;
+        }
+        
+        .sensor-thresholds {
+            margin-top: 15px;
+        }
+        
+        .threshold {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .threshold-label {
+            font-weight: 500;
+        }
+        
+        .progress-container {
+            height: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--normal);
+            width: 0%;
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+        
+        .history-chart {
+            height: 100px;
+            margin-top: 20px;
+        }
+        
+        .combined-status {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .combined-status h2 {
+            margin-bottom: 10px;
+        }
+        
+        .status-message {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+        
+        @media (max-width: 768px) {
+            .sensor-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Drainage Monitoring System</h1>
+        <p>Real-time monitoring of drainage conditions</p>
+    </div>
+    
+    <div class="location-info">
+        <h2>Location: Downtown Main Street Drainage Point #42</h2>
+        <p>Last inspection: 3 days ago | Next scheduled cleaning: 4 days</p>
+    </div>
+    
+    <div class="sensor-grid">
+        <!-- Ultrasonic Sensor Card -->
+        <div class="sensor-card" id="ultrasonic-card">
+            <div class="sensor-header">
+                <div class="sensor-title">Waste Level</div>
+                <div class="sensor-status status-normal" id="ultrasonic-status">NORMAL</div>
+            </div>
+            <div class="sensor-value">
+                <span id="ultrasonic-value">0</span>
+                <span class="sensor-unit">% full</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="ultrasonic-progress"></div>
+            </div>
+            <div class="sensor-thresholds">
+                <div class="threshold">
+                    <span class="threshold-label">Normal:</span>
+                    <span>0-50%</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Warning:</span>
+                    <span>50-80%</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Critical:</span>
+                    <span>80-90%</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Emergency:</span>
+                    <span>>90%</span>
+                </div>
+            </div>
+            <div class="history-chart" id="ultrasonic-chart"></div>
+        </div>
+        
+        <!-- Gas Sensor Card -->
+        <div class="sensor-card" id="gas-card">
+            <div class="sensor-header">
+                <div class="sensor-title">Methane Level</div>
+                <div class="sensor-status status-normal" id="gas-status">NORMAL</div>
+            </div>
+            <div class="sensor-value">
+                <span id="gas-value">0</span>
+                <span class="sensor-unit">ppm</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="gas-progress"></div>
+            </div>
+            <div class="sensor-thresholds">
+                <div class="threshold">
+                    <span class="threshold-label">Normal:</span>
+                    <span>0-50 ppm</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Warning:</span>
+                    <span>50-200 ppm</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Critical:</span>
+                    <span>200-1000 ppm</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Emergency:</span>
+                    <span>>1000 ppm</span>
+                </div>
+            </div>
+            <div class="history-chart" id="gas-chart"></div>
+        </div>
+        
+        <!-- Float Sensor Card -->
+        <div class="sensor-card" id="float-card">
+            <div class="sensor-header">
+                <div class="sensor-title">Water Level</div>
+                <div class="sensor-status status-normal" id="float-status">NORMAL</div>
+            </div>
+            <div class="sensor-value">
+                <span id="float-value">0</span>
+                <span class="sensor-unit">% full</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="float-progress"></div>
+            </div>
+            <div class="sensor-thresholds">
+                <div class="threshold">
+                    <span class="threshold-label">Normal:</span>
+                    <span>0-30%</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Warning:</span>
+                    <span>30-70%</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Critical:</span>
+                    <span>70-90%</span>
+                </div>
+                <div class="threshold">
+                    <span class="threshold-label">Emergency:</span>
+                    <span>>90%</span>
+                </div>
+            </div>
+            <div class="history-chart" id="float-chart"></div>
+        </div>
+    </div>
+    
+    <div class="combined-status">
+        <h2>Current System Status</h2>
+        <div class="progress-container">
+            <div class="progress-bar" id="system-progress"></div>
+        </div>
+        <div class="status-message" id="system-status">All systems normal</div>
+    </div>
+
+    <script>
+        // Sensor data and thresholds
+        const sensorData = {
+            ultrasonic: {
+                value: 35,
+                max: 100,
+                thresholds: [50, 80, 90],
+                history: [],
+                status: 'normal'
+            },
+            gas: {
+                value: 30,
+                max: 1500,
+                thresholds: [50, 200, 1000],
+                history: [],
+                status: 'normal'
+            },
+            float: {
+                value: 25,
+                max: 100,
+                thresholds: [30, 70, 90],
+                history: [],
+                status: 'normal'
+            }
+        };
+        
+        // Initialize history data
+        function initializeHistory() {
+            for (let sensor in sensorData) {
+                sensorData[sensor].history = Array.from({length: 10}, () => 
+                    Math.floor(Math.random() * sensorData[sensor].thresholds[0])
+            }
+        }
+        
+        // Update sensor display
+        function updateSensorDisplay() {
+            for (let sensor in sensorData) {
+                // Update value display
+                document.getElementById(${sensor}-value).textContent = sensorData[sensor].value;
+                
+                // Update progress bar
+                const progressPercent = (sensorData[sensor].value / sensorData[sensor].max) * 100;
+                const progressBar = document.getElementById(${sensor}-progress);
+                progressBar.style.width = ${progressPercent}%;
+                
+                // Determine status and update UI
+                let status = 'normal';
+                let statusClass = 'status-normal';
+                let cardClass = '';
+                
+                if (sensor === 'ultrasonic' || sensor === 'float') {
+                    if (sensorData[sensor].value >= sensorData[sensor].thresholds[2]) {
+                        status = 'emergency';
+                        statusClass = 'status-emergency';
+                        cardClass = 'emergency';
+                    } else if (sensorData[sensor].value >= sensorData[sensor].thresholds[1]) {
+                        status = 'critical';
+                        statusClass = 'status-critical';
+                        cardClass = 'critical';
+                    } else if (sensorData[sensor].value >= sensorData[sensor].thresholds[0]) {
+                        status = 'warning';
+                        statusClass = 'status-warning';
+                        cardClass = 'warning';
+                    }
+                } else if (sensor === 'gas') {
+                    if (sensorData[sensor].value >= sensorData[sensor].thresholds[2]) {
+                        status = 'emergency';
+                        statusClass = 'status-emergency';
+                        cardClass = 'emergency';
+                    } else if (sensorData[sensor].value >= sensorData[sensor].thresholds[1]) {
+                        status = 'critical';
+                        statusClass = 'status-critical';
+                        cardClass = 'critical';
+                    } else if (sensorData[sensor].value >= sensorData[sensor].thresholds[0]) {
+                        status = 'warning';
+                        statusClass = 'status-warning';
+                        cardClass = 'warning';
+                    }
+                }
+                
+                // Update status display
+                const statusElement = document.getElementById(${sensor}-status);
+                statusElement.textContent = status.toUpperCase();
+                statusElement.className = sensor-status ${statusClass};
+                
+                // Update card class
+                const card = document.getElementById(${sensor}-card);
+                card.className = sensor-card ${cardClass};
+                
+                // Update progress bar color
+                progressBar.style.backgroundColor = getComputedStyle(document.documentElement)
+                    .getPropertyValue(--${status});
+                
+                // Update history
+                sensorData[sensor].history.push(sensorData[sensor].value);
+                if (sensorData[sensor].history.length > 10) {
+                    sensorData[sensor].history.shift();
+                }
+                
+                // Update chart
+                updateChart(sensor);
+            }
+            
+            // Update combined system status
+            updateSystemStatus();
+        }
+        
+        // Update chart visualization
+        function updateChart(sensorType) {
+            const chart = document.getElementById(${sensorType}-chart);
+            chart.innerHTML = '';
+            
+            const maxValue = sensorData[sensorType].max;
+            const history = sensorData[sensorType].history;
+            
+            history.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.style.height = ${(value / maxValue) * 100}%;
+                bar.style.width = ${100 / history.length}%;
+                bar.style.display = 'inline-block';
+                bar.style.marginRight = '2px';
+                bar.style.backgroundColor = getBarColor(sensorType, value);
+                bar.style.borderRadius = '3px 3px 0 0';
+                bar.style.transition = 'height 0.5s ease';
+                
+                chart.appendChild(bar);
+            });
+        }
+        
+        // Get color for chart bars based on value
+        function getBarColor(sensorType, value) {
+            const thresholds = sensorData[sensorType].thresholds;
+            
+            if (value >= thresholds[2]) {
+                return getComputedStyle(document.documentElement)
+                    .getPropertyValue('--emergency');
+            } else if (value >= thresholds[1]) {
+                return getComputedStyle(document.documentElement)
+                    .getPropertyValue('--critical');
+            } else if (value >= thresholds[0]) {
+                return getComputedStyle(document.documentElement)
+                    .getPropertyValue('--warning');
+            } else {
+                return getComputedStyle(document.documentElement)
+                    .getPropertyValue('--normal');
+            }
+        }
+        
+        // Update overall system status
+        function updateSystemStatus() {
+            const statuses = [
+                sensorData.ultrasonic.status,
+                sensorData.gas.status,
+                sensorData.float.status
+            ];
+            
+            let systemStatus = 'normal';
+            let systemMessage = 'All systems normal';
+            let systemColor = 'var(--normal)';
+            
+            if (statuses.includes('emergency')) {
+                systemStatus = 'emergency';
+                systemMessage = 'EMERGENCY: Immediate action required!';
+                systemColor = 'var(--emergency)';
+            } else if (statuses.includes('critical')) {
+                systemStatus = 'critical';
+                systemMessage = 'CRITICAL: Maintenance required';
+                systemColor = 'var(--critical)';
+            } else if (statuses.includes('warning')) {
+                systemStatus = 'warning';
+                systemMessage = 'Warning: Monitor closely';
+                systemColor = 'var(--warning)';
+            }
+            
+            // Update system progress bar (worst case)
+            const systemProgress = document.getElementById('system-progress');
+            systemProgress.style.width = systemStatus === 'emergency' ? '100%' :
+                                        systemStatus === 'critical' ? '80%' :
+                                        systemStatus === 'warning' ? '60%' : '30%';
+            systemProgress.style.backgroundColor = systemColor;
+            
+            // Update status message
+            const statusElement = document.getElementById('system-status');
+            statusElement.textContent = systemMessage;
+            statusElement.style.backgroundColor = systemColor;
+            statusElement.style.color = 'white';
+        }
+        
+        // Simulate real-time data updates
+        function simulateDataUpdate() {
+            // Randomly adjust sensor values
+            sensorData.ultrasonic.value = Math.max(0, Math.min(
+                sensorData.ultrasonic.value + (Math.random() * 10 - 3), 
+                sensorData.ultrasonic.max
+            ));
+            
+            sensorData.gas.value = Math.max(0, Math.min(
+                sensorData.gas.value + (Math.random() * 50 - 20), 
+                sensorData.gas.max
+            ));
+            
+            sensorData.float.value = Math.max(0, Math.min(
+                sensorData.float.value + (Math.random() * 15 - 5), 
+                sensorData.float.max
+            ));
+            
+            updateSensorDisplay();
+        }
+        
+        // Initialize the dashboard
+        initializeHistory();
+        updateSensorDisplay();
+        
+        // Update data every 3 seconds
+        setInterval(simulateDataUpdate, 3000);
+    </script>
+</body>
+</html>
