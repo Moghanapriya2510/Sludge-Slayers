@@ -1,0 +1,51 @@
+// Define Ultrasonic Sensor Pins
+#define TRIG_PIN 9
+#define ECHO_PIN 10
+
+// Define Float Sensor Pin
+#define FLOAT_SENSOR 7  // Connected to Digital Pin 7
+
+void setup() {
+  Serial.begin(9600);
+
+  // Set Ultrasonic Sensor Pins
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  // Set Float Sensor Pin with Pull-Up Resistor
+  pinMode(FLOAT_SENSOR, INPUT_PULLUP);  
+}
+
+void loop() {
+  // ======= [Ultrasonic Sensor] =======
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  long duration = pulseIn(ECHO_PIN, HIGH);
+  int distance = duration * 0.034 / 2;  // Convert time to distance
+
+  // ======= [Float Sensor] =======
+  int floatState = digitalRead(FLOAT_SENSOR);  // Read Float Sensor
+
+  // ======= [Serial Monitor Output] =======
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.print(" cm  |  ");
+
+  if (distance < 10) {  // Adjust threshold for object detection
+    Serial.print("🚨 Object DETECTED!  |  ");
+  } else {
+    Serial.print("✅ No Object Detected  |  ");
+  }
+
+  if (floatState == LOW) {
+    Serial.println("💧 Water Level HIGH (Float is UP)");
+  } else {
+    Serial.println("🚨 Water Level LOW (Float is DOWN)");
+  }
+
+  delay(1000);
+}
